@@ -5,30 +5,36 @@ import pytz
 st.set_page_config(page_title="ORB EA Time", page_icon="⏰")
 st.title("ORB EA Time Calculator")
 
-server_time_input = st.time_input("Wat is de server tijd nu (linksboven MT5)?")
+server_time_str = st.text_input(
+    "Wat is de server tijd nu (bijv 15:30 of 15:30:12)?"
+)
 
-if server_time_input:
+if server_time_str:
 
-    # Huidige lokale datum + tijd
-    local_now = datetime.now()
+    try:
+        # Parse ingevoerde tijd
+        if len(server_time_str.split(":")) == 2:
+            server_time = datetime.strptime(server_time_str, "%H:%M").time()
+        else:
+            server_time = datetime.strptime(server_time_str, "%H:%M:%S").time()
 
-    # Maak datetime van ingevoerde server tijd (vandaag)
-    server_now = datetime.combine(local_now.date(), server_time_input)
+        local_now = datetime.now()
 
-    # Bereken exact verschil in minuten
-    offset = server_now - local_now
+        server_now = datetime.combine(local_now.date(), server_time)
 
-    # New York timezone
-    ny_tz = pytz.timezone("America/New_York")
+        # Exact verschil in seconden
+        offset = server_now - local_now
 
-    # Vandaag 09:30 NY tijd
-    ny_today = datetime.now(ny_tz).date()
-    ny_open = ny_tz.localize(datetime.combine(ny_today, time(9, 30)))
+        ny_tz = pytz.timezone("America/New_York")
 
-    # Zet NY open om naar lokale tijd
-    ny_open_local = ny_open.astimezone()
+        ny_today = datetime.now(ny_tz).date()
+        ny_open = ny_tz.localize(datetime.combine(ny_today, time(9, 30)))
 
-    # Voeg exact server offset toe
-    ea_time = ny_open_local + offset
+        ny_open_local = ny_open.astimezone()
 
-    st.success(f"Zet je EA op: {ea_time.strftime('%H:%M')}")
+        ea_time = ny_open_local + offset
+
+        st.success(f"Zet je EA op: {ea_time.strftime('%H:%M:%S')}")
+
+    except:
+        st.error("Gebruik formaat HH:MM of HH:MM:SS")
